@@ -1,28 +1,28 @@
-import './App.css'
-import { NhostProvider } from '@nhost/react'
-import { nhost } from './lib/nhost.js'
-import SignIn from './signin'
-import Todos from './todos'
-import { useEffect, useState } from 'react'
+import React from "react";
+import { NhostProvider, useAuthenticationStatus } from "@nhost/react";
+import { nhost } from "./lib/nhost.js";
+import ChatPage from "./ChatPage";
+import SignIn from "./signin";
 
-function App() {
-  const [session, setSession] = useState(null)
+function AppContent() {
+  const { isAuthenticated, isLoading, user } = useAuthenticationStatus();
 
-  useEffect(() => {
-    // get initial session
-    setSession(nhost.auth.getSession())
-
-    // listen for session changes
-    nhost.auth.onAuthStateChanged((_, session) => {
-      setSession(session)
-    })
-  }, [])
-
-  return (
-    <NhostProvider nhost={nhost}>
-      {session ? <Todos session={session} /> : <SignIn />}
-    </NhostProvider>
-  )
+  if (isLoading) return <p>Loading…</p>;
+  if (!isAuthenticated) return <SignIn />;
+  if (!user || !user.emailVerified)
+    return (
+      <div style={{ textAlign: "center", margin: "2rem" }}>
+        <h3>Please verify your email address to access the chat.</h3>
+        <p>Check your inbox for the verification link.</p>
+      </div>
+    );
+  return <ChatPage />;
 }
 
-export default App
+export default function App() {
+  return (
+    <NhostProvider nhost={nhost}>
+      <AppContent />
+    </NhostProvider>
+  );
+}
